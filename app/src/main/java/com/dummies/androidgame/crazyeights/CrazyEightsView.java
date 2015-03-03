@@ -29,27 +29,52 @@ public class CrazyEightsView extends View {
 		 canvas.drawCircle(circleX, circleY, radius, redPaint);
 	 }
 	 
-	 public boolean onTouchEvent(MotionEvent event) {
-	        int eventaction = event.getAction();   
-	        int X = (int)event.getX();
-	        int Y = (int)event.getY();
+//	 public boolean onTouchEvent(MotionEvent event) {
+//	        int eventaction = event.getAction();
+//	        int X = (int)event.getX();
+//	        int Y = (int)event.getY();
+//
+//	        switch (eventaction ) {
+//
+//	        case MotionEvent.ACTION_DOWN:
+//	        	break;
+//
+//	        case MotionEvent.ACTION_MOVE:
+//	        	break;
+//
+//	        case MotionEvent.ACTION_UP:
+//	        	circleX = X;
+//	        	circleY = Y;
+//	        	break;
+//	        }
+//	        invalidate();
+//			return true;
+//	}
 
-	        switch (eventaction ) {
+    public boolean onTouchEvent( MotionEvent event )
+    {
+        int eventaction = event.getAction();
+        int x = (int) event.getX();
+        int y = (int) event.getY();
 
-	        case MotionEvent.ACTION_DOWN: 
-	        	break;
-
-	        case MotionEvent.ACTION_MOVE: 
-	        	break;
-	        	
-	        case MotionEvent.ACTION_UP:
-	        	circleX = X;
-	        	circleY = Y;
-	        	break;
-	        } 
-	        invalidate();
-			return true;
-	        
-	}
+        switch (eventaction )
+        {
+            case MotionEvent.ACTION_DOWN:
+                break;
+            case MotionEvent.ACTION_MOVE:
+                //grow radius while dragging finger on screen
+                radius += 1;
+                break;
+            case MotionEvent.ACTION_UP:
+                circleX = x;
+                circleY = y;
+                break;
+            case MotionEvent.ACTION_POINTER_2_UP: //doesn't work
+                radius = 30;
+                break;
+        }
+        invalidate();
+        return true;
+    }
 	 
 }
