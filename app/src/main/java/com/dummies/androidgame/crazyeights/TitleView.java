@@ -1,5 +1,6 @@
 package com.dummies.androidgame.crazyeights;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -16,10 +17,15 @@ public class TitleView extends View //extend view because I'm making my own cust
     private Bitmap titleGraphic; //Bitmap object to hold the title screen image
     private int screenW; //variable to keep track of screen width
     private int screenH; //Variable to keep track of the screen height
+    private Bitmap playButtonUp;
+    private Bitmap playButtonDown;
+    private boolean playButtonPressed;
+    private Context myContext; //current context to use with intents
 
     public TitleView( Context context )
     {
         super(context);
+        myContext = context;
         /*This line loads the bitmap into memory so it can be drawn on the screen.
           BitmapFactory creates bitmaps from various sources i.e. from the file in the
             drawable directory.
@@ -28,6 +34,11 @@ public class TitleView extends View //extend view because I'm making my own cust
             parameter that tells BitmapFactory what file to load: R.name_of_your_file
         */
         titleGraphic = BitmapFactory.decodeResource(getResources(), R.drawable.title_graphic);
+
+        //load bitmap with the TitleView constructor
+        playButtonUp = BitmapFactory.decodeResource(getResources(), R.drawable.play_button_up);
+
+        playButtonDown = BitmapFactory.decodeResource(getResources(), R.drawable.play_button_down);
     }
     /*
         Overriding the onSizeChanged method which is called by a view after the constructor but
@@ -52,6 +63,18 @@ public class TitleView extends View //extend view because I'm making my own cust
             by 2 to put equal amounts of space on either side of your graphic.
          */
         canvas.drawBitmap( titleGraphic, (screenW - titleGraphic.getWidth() ) /2, 0, null);
+        //only draw the playButtonDown if the player is touching the button
+        if( playButtonPressed)
+        {
+            canvas.drawBitmap(playButtonDown, (screenW - playButtonDown.getWidth()) / 2,
+                    (int) (screenH * 0.7), null);
+        }
+        else {
+            //draw playButtonUp
+            canvas.drawBitmap(playButtonUp, (screenW - playButtonUp.getWidth()) / 2,
+                    (int) (screenH * 0.7), null); //draw the top of the image at 70% screen height
+        }
+
     }
 
     // The logic for handling cases when the player touches the screen
@@ -64,10 +87,31 @@ public class TitleView extends View //extend view because I'm making my own cust
         switch ( eventAction )
         {
             case MotionEvent.ACTION_DOWN:
+                /*
+                This monstrosity checks to see whether the player is touching the screen within the
+                bounds of the Play-button graphic. First two conditions check for horizontal bounds
+                and the last two check for vertical bounds.
+                THERE MUST BE A BETTER WAY THAN THIS
+                 */
+                if( x > (screenW - playButtonUp.getWidth()) /2 &&
+                        x < ( ( screenW - playButtonUp.getWidth() ) /2 )+
+                        playButtonUp.getWidth() &&
+                        y > (int) (screenH * 0.7) &&
+                        y < (int) (screenH * 0.7) +
+                        playButtonUp.getHeight())
+                {
+                    playButtonPressed = true;
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
                 break;
             case MotionEvent.ACTION_UP:
+                if( playButtonPressed )
+                {
+                    Intent gameIntent = new Intent(myContext, GameActivity.class);
+                    myContext.startActivity(gameIntent);
+                }
+                playButtonPressed = false;
                 break;
         }
         invalidate();
