@@ -11,20 +11,15 @@ public class CrazyEightsActivity extends Activity {
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-
-        //Test using custom view
-        //CrazyEightsView myView = new CrazyEightsView( this );
+        //Setting this activity to a custom view
         TitleView tView = new TitleView( this );
         tView.setKeepScreenOn( true ); //forces screen to stay on. Screen will never auto timeout
-        setContentView(tView);
 
-        //ACTUAL GAME VIEW
-//        TitleView tView = new TitleView(this);
-//        tView.setKeepScreenOn(true);
-//        requestWindowFeature(Window.FEATURE_NO_TITLE);
-//
-//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-//        					 WindowManager.LayoutParams.FLAG_FULLSCREEN);
-//        setContentView(tView);
+        requestWindowFeature( Window.FEATURE_NO_TITLE); //tells activity not to show title of app
+        //set window to full screen
+        getWindow().setFlags( WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+       //Display view
+        setContentView(tView);
     }
 }
