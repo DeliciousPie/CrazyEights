@@ -13,8 +13,9 @@ public class CrazyEightsActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         //Test using custom view
-        CrazyEightsView myView = new CrazyEightsView( this );
-        setContentView(myView);
+        //CrazyEightsView myView = new CrazyEightsView( this );
+        TitleView tView = new TitleView( this );
+        setContentView(tView);
 
         //ACTUAL GAME VIEW
 //        TitleView tView = new TitleView(this);
