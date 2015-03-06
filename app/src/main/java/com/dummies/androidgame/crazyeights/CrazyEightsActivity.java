@@ -15,6 +15,7 @@ public class CrazyEightsActivity extends Activity {
         //Test using custom view
         //CrazyEightsView myView = new CrazyEightsView( this );
         TitleView tView = new TitleView( this );
+        tView.setKeepScreenOn( true ); //forces screen to stay on. Screen will never auto timeout
         setContentView(tView);
 
         //ACTUAL GAME VIEW
