@@ -1,4 +1,5 @@
 package com.dummies.androidgame.crazyeights;
+import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -7,6 +8,11 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +44,7 @@ public class GameView extends View
     private int movingY;
     private int validRank = 8; //initialized at 8 because 8 is always a valid play
     private int validSuit = 0;
+    private Bitmap nextCardButton; //button to cycle through hand when it has > 7 cards
 
     public GameView( Context context )
     {
@@ -67,7 +74,10 @@ public class GameView extends View
         scaledCardW = (int) (screenW / 8);
         scaledCardH = (int) (scaledCardW * 1.28);
         cardBack = Bitmap.createScaledBitmap(
-                tempBitmap, scaledCardW, scaledCardH, false );
+                tempBitmap, scaledCardW, scaledCardH, false);
+        nextCardButton = BitmapFactory.decodeResource(
+                myContext.getResources(), R.drawable.arrow_next);
+
         initCards();
         dealCards();
         drawCard(discardPile); //move top card from draw pile to discardPile
@@ -90,13 +100,24 @@ public class GameView extends View
                 screenH - whitePaint.getTextSize() - 10, whitePaint);
 
         /** Display player hand **/
-        for( int i = 0; i < myHand.size(); i++ )
+        if( myHand.size() > 7 )
         {
-            if( i < 7 )
+            canvas.drawBitmap(nextCardButton, screenW - nextCardButton.getWidth() - (30 * scale),
+                    screenH - nextCardButton.getHeight() - scaledCardH - (90 * scale), null);
+        }
+        for(int i = 0; i < myHand.size(); i++)
+        {
+            if(i == movingCardIdx)
             {
-                canvas.drawBitmap(myHand.get(i).getBitmap(),
-                        i * (scaledCardW + 5), screenH - scaledCardH -
-                                whitePaint.getTextSize() - ( 50 * scale), null);
+                canvas.drawBitmap(myHand.get(i).getBitmap(), movingX, movingY, null);
+            }
+            else
+            {
+                if(i < 7)
+                {
+                    canvas.drawBitmap(myHand.get(i).getBitmap(), i * (scaledCardW + 5),
+                            screenH - scaledCardH - whitePaint.getTextSize() - (50 * scale), null);
+                }
             }
         }
         /** Display opponent hand **/
@@ -171,7 +192,8 @@ public class GameView extends View
                 break;
             //reset movingCardIdx when player lifts finger from the screen
             case MotionEvent.ACTION_UP:
-                if( movingCardIdx > -1 && x > (screenW / 2) - (100 * scale) &&
+                if( movingCardIdx > -1 &&
+                        x > (screenW / 2) - (100 * scale) &&
                         x < (screenW / 2) + (100 * scale) &&
                         y > (screenH / 2) - (100 * scale) &&
                         y < (screenH / 2) + (100 * scale) &&
@@ -183,6 +205,35 @@ public class GameView extends View
                     validSuit = myHand.get(movingCardIdx).getSuit();
                     discardPile.add(0, myHand.get(movingCardIdx));
                     myHand.remove(movingCardIdx);
+
+                    if(validRank == 8)
+                    {
+                        showChooseSuitDialog();
+                    }
+                }
+                if(movingCardIdx == -1 && myTurn &&
+                        x > (screenW / 2) - (100 * scale) &&
+                        x < (screenW / 2) + (100 * scale) &&
+                        y > (screenH / 2) - (100 * scale) &&
+                        y < (screenH /2) + (100 * scale) )
+                {
+                    if(checkForValidDraw())
+                    {
+                        drawCard(myHand);
+                    }
+                    else
+                    {
+                        Toast.makeText(myContext, "You have a valid play.",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+                //if the player has > 7 cards and clicks button, shift card indexes up by 1
+                if(myHand.size() > 7 &&
+                        x > screenW - nextCardButton.getWidth() - (30 * scale) &&
+                        y > screenH - nextCardButton.getHeight() - scaledCardH - (90 * scale) &&
+                        y < screenH - nextCardButton.getHeight() - scaledCardH - (60 * scale))
+                {
+                    Collections.rotate(myHand, 1);
                 }
 
                 movingCardIdx = -1;
@@ -243,6 +294,73 @@ public class GameView extends View
             drawCard(myHand);
             drawCard(oppHand);
         }
+    }
+
+    //Method to show the dialog box to choose suits when an 8 is played
+    private void showChooseSuitDialog()
+    {
+        final Dialog chooseSuitDialog = new Dialog(myContext);
+        chooseSuitDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        chooseSuitDialog.setContentView(R.layout.choose_suit_dialog);
+
+        final Spinner suitSpinner = (Spinner) chooseSuitDialog.findViewById(R.id.suitSpinner);
+
+        ArrayAdapter<CharSequence> adapter =
+                ArrayAdapter.createFromResource(myContext, R.array.suits,
+                        android.R.layout.simple_spinner_dropdown_item);
+
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        suitSpinner.setAdapter(adapter);
+
+        Button okButton =
+                (Button) chooseSuitDialog.findViewById(R.id.okButton);
+        okButton.setOnClickListener(new View.OnClickListener()
+        {
+            public void onClick(View view)
+            {
+                validSuit = (suitSpinner.getSelectedItemPosition() + 1) * 100;
+                String suitText = "";
+                if( validSuit == 100)
+                {
+                    suitText = "Diamonds";
+                }
+                else if (validSuit == 200 )
+                {
+                    suitText = "Clubs";
+                }
+                else if (validSuit == 300)
+                {
+                    suitText = "Hearts";
+                }
+                else
+                {
+                    suitText = "Spades";
+                }
+
+                chooseSuitDialog.dismiss();
+                Toast.makeText(myContext, "You chose " + suitText, Toast.LENGTH_SHORT ).show();
+            }
+        });
+        chooseSuitDialog.show();
+    }
+
+    private boolean checkForValidDraw()
+    {
+        boolean canDraw = true;
+        for( int i = 0; i < myHand.size(); i++)
+        {
+            int tempId = myHand.get(i).getId();
+            int tempRank = myHand.get(i).getRank();
+            int tempSuit = myHand.get(i).getSuit();
+
+            if(validSuit == tempSuit || validRank == tempRank ||
+                    tempId == 108 || tempId == 208 || tempId == 308 || tempId == 408)
+            {
+                canDraw = false;
+            }
+        }
+        return canDraw;
+
     }
 
 }
