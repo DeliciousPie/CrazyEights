@@ -33,13 +33,19 @@ public class GameView extends View
     private int myScore; //player's score
     private Bitmap cardBack;
     private boolean myTurn; //Controls whether certain logic will happen if it is the player's turn
+    private int movingCardIdx = -1;
+    private int movingX;
+    private int movingY;
+    private int validRank = 8; //initialized at 8 because 8 is always a valid play
+    private int validSuit = 0;
 
     public GameView( Context context )
     {
         super(context);
         myContext = context;
         scale = myContext.getResources().getDisplayMetrics().density;
-        myTurn = new Random().nextBoolean(); //randomly determine who goes first
+        //myTurn = new Random().nextBoolean(); //randomly determine who goes first
+        myTurn = true; //this is only for testing. Remove after
 
         whitePaint = new Paint();
         whitePaint.setAntiAlias(true); //AA just like in game; smooth edges, no jaggies
@@ -65,6 +71,9 @@ public class GameView extends View
         initCards();
         dealCards();
         drawCard(discardPile); //move top card from draw pile to discardPile
+
+        validSuit = discardPile.get(0).getSuit();
+        validRank = discardPile.get(0).getRank();
 
     }
 
@@ -111,6 +120,21 @@ public class GameView extends View
                     (screenW / 2) + 10,
                     (screenH / 2) - (cardBack.getHeight() / 2), null);
         }
+
+        //draw card as it is moved
+        for( int i = 0; i < myHand.size(); i++ )
+        {
+            if( i == movingCardIdx)
+            {
+                canvas.drawBitmap(myHand.get(i).getBitmap(), movingX, movingY, null);
+            }
+            else
+            {
+                canvas.drawBitmap(myHand.get(i).getBitmap(), i * (scaledCardW + 5),
+                        screenH - scaledCardH - whitePaint.getTextSize() - (50 * scale), null);
+            }
+        }
+        invalidate();
     }
 
     public boolean onTouchEvent( MotionEvent event )
@@ -122,10 +146,46 @@ public class GameView extends View
         switch (eventaction)
         {
             case MotionEvent.ACTION_DOWN:
+                if(myTurn)
+                {
+                    //loop through player hand and see if player has touched the screen on a card
+                    //  that's being displayed. If so, assign the index of that card to movingCardIdx
+                    //      as well as to the current x and y positions to the movingX and movingY
+                    for(int i = 0; i < 7; i++)
+                    {
+                        if(x > i * (scaledCardW + 5) && x < i * (scaledCardW + 5) + scaledCardW
+                                && y > screenH - scaledCardH - whitePaint.getTextSize() -
+                                (50 * scale))
+                        {
+                            movingCardIdx = i;
+                            movingX = x - (int) (30 * scale);
+                            movingY = y - (int) (70 * scale);
+                        }
+                    }
+                }
                 break;
+            //keep track of x and y as player moves finger across screen. Use for drawing card bmp
             case MotionEvent.ACTION_MOVE:
+                movingX = x - (int) (30 * scale);
+                movingY = y - (int) (70 * scale);
                 break;
+            //reset movingCardIdx when player lifts finger from the screen
             case MotionEvent.ACTION_UP:
+                if( movingCardIdx > -1 && x > (screenW / 2) - (100 * scale) &&
+                        x < (screenW / 2) + (100 * scale) &&
+                        y > (screenH / 2) - (100 * scale) &&
+                        y < (screenH / 2) + (100 * scale) &&
+                        (myHand.get( movingCardIdx).getRank() == 8 ||
+                        myHand.get(movingCardIdx).getRank() == validRank) ||
+                        myHand.get(movingCardIdx).getSuit() == validSuit)
+                {
+                    validRank = myHand.get(movingCardIdx).getRank();
+                    validSuit = myHand.get(movingCardIdx).getSuit();
+                    discardPile.add(0, myHand.get(movingCardIdx));
+                    myHand.remove(movingCardIdx);
+                }
+
+                movingCardIdx = -1;
                 break;
         }
         invalidate();
