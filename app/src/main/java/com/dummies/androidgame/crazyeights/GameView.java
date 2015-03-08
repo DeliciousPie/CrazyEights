@@ -45,14 +45,13 @@ public class GameView extends View
     private int validRank = 8; //initialized at 8 because 8 is always a valid play
     private int validSuit = 0;
     private Bitmap nextCardButton; //button to cycle through hand when it has > 7 cards
+    private ComputerPlayer computerPlayer = new ComputerPlayer();
 
     public GameView( Context context )
     {
         super(context);
         myContext = context;
         scale = myContext.getResources().getDisplayMetrics().density;
-        //myTurn = new Random().nextBoolean(); //randomly determine who goes first
-        myTurn = true; //this is only for testing. Remove after
 
         whitePaint = new Paint();
         whitePaint.setAntiAlias(true); //AA just like in game; smooth edges, no jaggies
@@ -84,9 +83,13 @@ public class GameView extends View
 
         validSuit = discardPile.get(0).getSuit();
         validRank = discardPile.get(0).getRank();
+        myTurn = new Random().nextBoolean(); //randomly determine who goes first
+        if( !myTurn )
+        {
+            makeComputerPlay();
+        }
 
     }
-
 
     @Override
     protected void onDraw( Canvas canvas )
@@ -161,8 +164,8 @@ public class GameView extends View
     public boolean onTouchEvent( MotionEvent event )
     {
         int eventaction = event.getAction();
-        int x = (int) event.getX();
-        int y = (int) event.getY();
+        int X = (int) event.getX();
+        int Y = (int) event.getY();
 
         switch (eventaction)
         {
@@ -171,71 +174,69 @@ public class GameView extends View
                 {
                     //loop through player hand and see if player has touched the screen on a card
                     //  that's being displayed. If so, assign the index of that card to movingCardIdx
-                    //      as well as to the current x and y positions to the movingX and movingY
+                    //      as well as to the current X and Y positions to the movingX and movingY
                     for(int i = 0; i < 7; i++)
                     {
-                        if(x > i * (scaledCardW + 5) && x < i * (scaledCardW + 5) + scaledCardW
-                                && y > screenH - scaledCardH - whitePaint.getTextSize() -
+                        if(X > i * (scaledCardW + 5) && X < i * (scaledCardW + 5) + scaledCardW
+                                && Y > screenH - scaledCardH - whitePaint.getTextSize() -
                                 (50 * scale))
                         {
                             movingCardIdx = i;
-                            movingX = x - (int) (30 * scale);
-                            movingY = y - (int) (70 * scale);
+                            movingX = X - (int) (30 * scale);
+                            movingY = Y - (int) (70 * scale);
                         }
                     }
                 }
                 break;
-            //keep track of x and y as player moves finger across screen. Use for drawing card bmp
+            //keep track of X and Y as player moves finger across screen. Use for drawing card bmp
             case MotionEvent.ACTION_MOVE:
-                movingX = x - (int) (30 * scale);
-                movingY = y - (int) (70 * scale);
+                movingX = X - (int) (30 * scale);
+                movingY = Y - (int) (70 * scale);
                 break;
             //reset movingCardIdx when player lifts finger from the screen
             case MotionEvent.ACTION_UP:
-                if( movingCardIdx > -1 &&
-                        x > (screenW / 2) - (100 * scale) &&
-                        x < (screenW / 2) + (100 * scale) &&
-                        y > (screenH / 2) - (100 * scale) &&
-                        y < (screenH / 2) + (100 * scale) &&
-                        (myHand.get( movingCardIdx).getRank() == 8 ||
-                        myHand.get(movingCardIdx).getRank() == validRank) ||
-                        myHand.get(movingCardIdx).getSuit() == validSuit)
+                if (movingCardIdx > -1 &&
+                        X > (screenW/2)-(100*scale) &&
+                        X < (screenW/2)+(100*scale) &&
+                        Y > (screenH/2)-(100*scale) &&
+                        Y < (screenH/2)+(100*scale) &&
+                        (myHand.get(movingCardIdx).getRank() == 8 ||
+                                myHand.get(movingCardIdx).getRank() == validRank ||
+                                myHand.get(movingCardIdx).getSuit() == validSuit))
                 {
                     validRank = myHand.get(movingCardIdx).getRank();
                     validSuit = myHand.get(movingCardIdx).getSuit();
                     discardPile.add(0, myHand.get(movingCardIdx));
                     myHand.remove(movingCardIdx);
-
-                    if(validRank == 8)
-                    {
-                        showChooseSuitDialog();
+                    if (myHand.isEmpty()) {
+                        //endHand();
+                    } else {
+                        if (validRank == 8) {
+                            showChooseSuitDialog();
+                        } else {
+                            myTurn = false;
+                            makeComputerPlay();
+                        }
                     }
                 }
-                if(movingCardIdx == -1 && myTurn &&
-                        x > (screenW / 2) - (100 * scale) &&
-                        x < (screenW / 2) + (100 * scale) &&
-                        y > (screenH / 2) - (100 * scale) &&
-                        y < (screenH /2) + (100 * scale) )
+                if (movingCardIdx == -1 && myTurn &&
+                        X > (screenW/2)-(100*scale) &&
+                        X < (screenW/2)+(100*scale) &&
+                        Y > (screenH/2)-(100*scale) &&
+                        Y < (screenH/2)+(100*scale))
                 {
-                    if(checkForValidDraw())
-                    {
+                    if (checkForValidDraw()) {
                         drawCard(myHand);
-                    }
-                    else
-                    {
-                        Toast.makeText(myContext, "You have a valid play.",
-                                Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(myContext, "You have a valid play.", Toast.LENGTH_SHORT).show();
                     }
                 }
-                //if the player has > 7 cards and clicks button, shift card indexes up by 1
-                if(myHand.size() > 7 &&
-                        x > screenW - nextCardButton.getWidth() - (30 * scale) &&
-                        y > screenH - nextCardButton.getHeight() - scaledCardH - (90 * scale) &&
-                        y < screenH - nextCardButton.getHeight() - scaledCardH - (60 * scale))
-                {
+                if (myHand.size() > 7 &&
+                        X > screenW-nextCardButton.getWidth()-(30*scale) &&
+                        Y > screenH-nextCardButton.getHeight()-scaledCardH-(90*scale) &&
+                        Y < screenH-nextCardButton.getHeight()-scaledCardH-(60*scale)) {
                     Collections.rotate(myHand, 1);
                 }
-
                 movingCardIdx = -1;
                 break;
         }
@@ -314,7 +315,7 @@ public class GameView extends View
 
         Button okButton =
                 (Button) chooseSuitDialog.findViewById(R.id.okButton);
-        okButton.setOnClickListener(new View.OnClickListener()
+        okButton.setOnClickListener(new OnClickListener()
         {
             public void onClick(View view)
             {
@@ -339,6 +340,8 @@ public class GameView extends View
 
                 chooseSuitDialog.dismiss();
                 Toast.makeText(myContext, "You chose " + suitText, Toast.LENGTH_SHORT ).show();
+                myTurn = false;
+                makeComputerPlay();
             }
         });
         chooseSuitDialog.show();
@@ -361,6 +364,57 @@ public class GameView extends View
         }
         return canDraw;
 
+    }
+
+    private void makeComputerPlay()
+    {
+        int tempPlay = 0;
+        while( tempPlay ==0)
+        {
+            tempPlay = computerPlayer.makePlay(oppHand, validSuit, validRank);
+            if(tempPlay == 0)
+            {
+                drawCard(oppHand);
+            }
+        }
+        if( tempPlay == 108 || tempPlay == 208 || tempPlay == 308 || tempPlay == 408)
+        {
+            validRank = 8;
+            validSuit = computerPlayer.chooseSuit(oppHand);
+            String suitText = "";
+            if(validSuit == 100)
+            {
+                suitText = "Diamonds";
+            }
+            else if(validSuit == 200)
+            {
+                suitText = "Clubs";
+            }
+            else if(validSuit == 300)
+            {
+                suitText = "Hearts";
+            }
+            else
+            {
+                suitText = "Spades";
+            }
+            Toast.makeText(myContext, "Computer chose " + suitText, Toast.LENGTH_SHORT).show();
+        }
+        else
+        {
+            validSuit = Math.round( (tempPlay / 100) * 100);
+            validRank = tempPlay - validSuit;
+        }
+        for(int i = 0; i < oppHand.size(); i++)
+        {
+            Card tempCard = oppHand.get(i);
+            if(tempPlay == tempCard.getId())
+            {
+                discardPile.add(0, oppHand.get(i));
+                oppHand.remove(i);
+            }
+        }
+        myTurn = true;
     }
 
 }
