@@ -11,12 +11,31 @@ public class Card
     private int suit;
     private int rank;
     private Bitmap bmp;
+    private int scoreValue = 0;
 
     public Card( int newId)
     {
         id = newId;
         suit = Math.round( (id / 100) * 100);
         rank = id - suit;
+
+        if(rank == 8)
+        {
+            scoreValue = 50;
+        }
+        else if(rank == 14)
+        {
+            scoreValue = 1;
+        }
+        else if(rank > 9 && rank < 14)
+        {
+            scoreValue = 10;
+        }
+        else
+        {
+            scoreValue = rank;
+        }
+
     }
 
     public void setBitmap( Bitmap newBitmap)
@@ -43,5 +62,11 @@ public class Card
     {
         return rank;
     }
+
+    public int getScoreValue()
+    {
+        return scoreValue;
+    }
+
 
 }

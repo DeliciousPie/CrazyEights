@@ -12,6 +12,7 @@ import android.view.Window;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ public class GameView extends View
     private int validSuit = 0;
     private Bitmap nextCardButton; //button to cycle through hand when it has > 7 cards
     private ComputerPlayer computerPlayer = new ComputerPlayer();
+    private int scoreThisHand = 0;
 
     public GameView( Context context )
     {
@@ -210,7 +212,7 @@ public class GameView extends View
                     myHand.remove(movingCardIdx);
                     if (myHand.isEmpty())
                     {
-                        //endHand();
+                        endHand();
                     }
                     else
                     {
@@ -424,7 +426,110 @@ public class GameView extends View
                 oppHand.remove(i);
             }
         }
+        if(oppHand.isEmpty())
+        {
+            endHand();
+        }
         myTurn = true;
+    }
+
+    private void updateScores()
+    {
+        for(int i = 0; i < myHand.size(); i++)
+        {
+            oppScore += myHand.get(i).getScoreValue();
+        }
+        for(int i = 0; i < oppHand.size(); i++)
+        {
+            myScore += oppHand.get(i).getScoreValue();
+            scoreThisHand += oppHand.get(i).getScoreValue();
+        }
+    }
+
+    private void endHand()
+    {
+        final Dialog endHandDialog = new Dialog(myContext);
+        endHandDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        endHandDialog.setContentView(R.layout.end_hand_dialog);
+        updateScores();
+        TextView endHandText = (TextView) endHandDialog.findViewById(R.id.endHandText);
+
+        if( myHand.isEmpty())
+        {
+            if(myScore >= 300)
+            {
+                endHandText.setText("You reached " + myScore +
+                        " points! You won! Would you like to play again?");
+            }
+            else
+            {
+                endHandText.setText("You went out and got " + scoreThisHand + " points!");
+            }
+        }
+        else if (oppHand.isEmpty())
+        {
+            if(oppScore >= 300)
+            {
+                endHandText.setText("The computer reached " + oppScore +
+                " points. Sorry, you lost. Would you like to play again?");
+            }
+            else
+            {
+                endHandText.setText("The computer went out and got " + scoreThisHand + " points.");
+            }
+        }
+        Button nextHandButton = (Button) endHandDialog.findViewById(R.id.nextHandButton);
+
+        if(oppScore >= 300 || myScore >= 300)
+        {
+            nextHandButton.setText("New Game");
+        }
+
+        nextHandButton.setOnClickListener
+                (new View.OnClickListener()
+                {
+                    public void onClick(View view)
+                    {
+                        if(oppScore >= 300 || myScore >= 300)
+                        {
+                            myScore = 0;
+                            oppScore = 0;
+                        }
+                        initNewHand();
+                        endHandDialog.dismiss();
+                    }
+                });
+        endHandDialog.show();
+    }
+
+    private void initNewHand()
+    {
+        scoreThisHand = 0;
+        if(myHand.isEmpty())
+        {
+            myTurn = true;
+        }
+        else
+        {
+            myTurn = false;
+        }
+        //reset all cards
+        deck.addAll(discardPile);
+        deck.addAll(myHand);
+        deck.addAll(oppHand);
+        discardPile.clear();
+        myHand.clear();
+        oppHand.clear();
+        dealCards();
+        drawCard(discardPile);
+        //set valid card to new top card
+        validSuit = discardPile.get(0).getSuit();
+        validRank = discardPile.get(0).getRank();
+        //if computer goes first, have computer play
+        if(!myTurn)
+        {
+            makeComputerPlay();
+        }
     }
 
 }
