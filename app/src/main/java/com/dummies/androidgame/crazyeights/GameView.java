@@ -208,12 +208,18 @@ public class GameView extends View
                     validSuit = myHand.get(movingCardIdx).getSuit();
                     discardPile.add(0, myHand.get(movingCardIdx));
                     myHand.remove(movingCardIdx);
-                    if (myHand.isEmpty()) {
+                    if (myHand.isEmpty())
+                    {
                         //endHand();
-                    } else {
-                        if (validRank == 8) {
+                    }
+                    else
+                    {
+                        if (validRank == 8)
+                        {
                             showChooseSuitDialog();
-                        } else {
+                        }
+                        else
+                        {
                             myTurn = false;
                             makeComputerPlay();
                         }
@@ -225,16 +231,20 @@ public class GameView extends View
                         Y > (screenH/2)-(100*scale) &&
                         Y < (screenH/2)+(100*scale))
                 {
-                    if (checkForValidDraw()) {
+                    if (checkForValidDraw())
+                    {
                         drawCard(myHand);
-                    } else {
+                    }
+                    else
+                    {
                         Toast.makeText(myContext, "You have a valid play.", Toast.LENGTH_SHORT).show();
                     }
                 }
                 if (myHand.size() > 7 &&
                         X > screenW-nextCardButton.getWidth()-(30*scale) &&
                         Y > screenH-nextCardButton.getHeight()-scaledCardH-(90*scale) &&
-                        Y < screenH-nextCardButton.getHeight()-scaledCardH-(60*scale)) {
+                        Y < screenH-nextCardButton.getHeight()-scaledCardH-(60*scale))
+                {
                     Collections.rotate(myHand, 1);
                 }
                 movingCardIdx = -1;
